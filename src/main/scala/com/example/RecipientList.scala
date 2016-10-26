@@ -86,3 +86,24 @@ class MountaineeringSuppliesOrderProcessor extends Actor {
       println(s"OrderProcessor: received unexpected message: $message")
   }
 }
+
+class BudgetHikersPriceQuotes(interestRegistrar: ActorRef) extends Actor {
+  interestRegistrar ! PriceQuoteInterest(self.path.toString, self, 1.00, 1000.00)
+
+  def receive = {
+    case rpq: RequestPriceQuote =>
+      val discount = discountPercentage(rpq.orderTotalRetailPrice) * rpq.retailPrice
+      sender ! PriceQuote(rpq.rfqId, rpq.itemId, rpq.retailPrice, rpq.retailPrice - discount)
+
+    case message: Any =>
+      println(s"BudgetHikersPriceQuotes: received unexpected message: $message")
+  }
+
+  def discountPercentage(orderTotalRetailPrice: Double) = {
+    if (orderTotalRetailPrice <= 100.00) 0.02
+    else if (orderTotalRetailPrice <= 399.99) 0.03
+    else if (orderTotalRetailPrice <= 499.99) 0.05
+    else if (orderTotalRetailPrice <= 799.99) 0.07
+    else 0.075
+  }
+}
