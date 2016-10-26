@@ -175,3 +175,28 @@ class PinnacleGearPriceQuotes(interestRegistrar: ActorRef) extends Actor {
     else 0.06
   }
 }
+
+class RockBottomOuterwearPriceQuotes(interestRegistrar: ActorRef) extends Actor {
+  interestRegistrar ! PriceQuoteInterest(self.path.toString, self, 0.50, 7500.00)
+
+  def receive = {
+    case rpq: RequestPriceQuote =>
+      val discount = discountPercentage(rpq.orderTotalRetailPrice) * rpq.retailPrice
+      sender ! PriceQuote(rpq.rfqId, rpq.itemId, rpq.retailPrice, rpq.retailPrice - discount)
+
+    case message: Any =>
+      println(s"RockBottomOuterwearPriceQuotes: received unexpected message: $message")
+  }
+
+  def discountPercentage(orderTotalRetailPrice: Double) = {
+    if (orderTotalRetailPrice <= 100.00) 0.015
+    else if (orderTotalRetailPrice <= 399.99) 0.02
+    else if (orderTotalRetailPrice <= 499.99) 0.03
+    else if (orderTotalRetailPrice <= 799.99) 0.04
+    else if (orderTotalRetailPrice <= 999.99) 0.05
+    else if (orderTotalRetailPrice <= 2999.99) 0.06
+    else if (orderTotalRetailPrice <= 4999.99) 0.07
+    else if (orderTotalRetailPrice <= 5999.99) 0.075
+    else 0.08
+  }
+}
