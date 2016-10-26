@@ -15,7 +15,7 @@ case class RequestPriceQuote(rfqId: String, itemId: String, retailPrice: Double,
 
 case class PriceQuote(rfqId: String, itemId: String, retailPrice: Double, discountPrice: Double)
 
-object RecipientListDriver {
+object RecipientListDriver extends CompletableApp(5) {
   val orderProcessor = system.actorOf(Props[MountaineeringSuppliesOrderProcessor], "orderProcessor")
 
   system.actorOf(Props(classOf[BudgetHikersPriceQuotes], orderProcessor), "budgetHikers")
