@@ -107,3 +107,24 @@ class BudgetHikersPriceQuotes(interestRegistrar: ActorRef) extends Actor {
     else 0.075
   }
 }
+
+class HighSierraPriceQuotes(interestRegistrar: ActorRef) extends Actor {
+  interestRegistrar ! PriceQuoteInterest(self.path.toString, self, 100.00, 10000.00)
+
+  def receive = {
+    case rpq: RequestPriceQuote =>
+      val discount = discountPercentage(rpq.orderTotalRetailPrice) * rpq.retailPrice
+      sender ! PriceQuote(rpq.rfqId, rpq.itemId, rpq.retailPrice, rpq.retailPrice - discount)
+
+    case message: Any =>
+      println(s"HighSierraPriceQuotes: received unexpected message: $message")
+  }
+
+  def discountPercentage(orderTotalRetailPrice: Double): Double = {
+    if (orderTotalRetailPrice <= 150.00) 0.015
+    else if (orderTotalRetailPrice <= 499.99) 0.02
+    else if (orderTotalRetailPrice <= 999.99) 0.03
+    else if (orderTotalRetailPrice <= 4999.99) 0.04
+    else 0.05
+  }
+}
