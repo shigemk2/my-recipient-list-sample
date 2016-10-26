@@ -53,3 +53,36 @@ object RecipientListDriver {
       RetailItem("18", 249.95),
       RetailItem("19", 789.99)))
 }
+
+class MountaineeringSuppliesOrderProcessor extends Actor {
+  val interestRegistry = scala.collection.mutable.Map[String, PriceQuoteInterest]()
+
+  def calculateRecipientList(rfq: RequestForQuotation): Iterable[ActorRef] = {
+    for {
+      interest <- interestRegistry.values
+      if (rfq.totalRetailPrice >= interest.lowTotalRetail)
+      if (rfq.totalRetailPrice <= interest.highTotalRetail)
+    } yield interest.quoteProcessor
+  }
+
+  def dispatchTo(rfq: RequestForQuotation, recipientList: Iterable[ActorRef]) = {
+    recipientList.foreach { recipient =>
+      rfq.retailItems.foreach { retailItem =>
+        println("OrderProcessor: " + rfq.rfqId + " item: " + retailItem.itemId + " to: " + recipient.path.toString)
+        recipient ! RequestPriceQuote(rfq.rfqId, retailItem.itemId, retailItem.retailPrice, rfq.totalRetailPrice)
+      }
+    }
+  }
+
+  def receive = {
+    case interest: PriceQuoteInterest =>
+      interestRegistry(interest.path) = interest
+    case priceQuote: PriceQuote =>
+      println(s"OrderProcessor: received: $priceQuote")
+    case rfq: RequestForQuotation =>
+      val recipientList = calculateRecipientList(rfq)
+      dispatchTo(rfq, recipientList)
+    case message: Any =>
+      println(s"OrderProcessor: received unexpected message: $message")
+  }
+}
